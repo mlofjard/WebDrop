@@ -1,0 +1,137 @@
+angular.module('webdrop.controllers.file', [])
+  .controller('fileCtrl', ['$scope', '$routeParams', function($scope, $routeParams) {
+
+    $scope.fileRequest = {
+      roomCode: $routeParams.roomCode,
+      fileId: $routeParams.fileId,
+      userId: $routeParams.userId,
+      progress: {type: 'info', value: 0},
+      metaData: {name: 'Unknown', size: -1}
+    };
+
+    $scope.progress = {type: 'info', value: 0};
+
+    $scope.status = "Waiting for user...";
+
+    var channel = new DataChannel('room' + $scope.fileRequest.roomCode, {
+      transmitRoomOnce: false,
+      autoCloseEntireSession: false
+    });
+
+    channel.openSignalingChannel = function(config) {
+      var URL = 'http://192.168.0.112:3000/';
+      var channel = config.channel || this.channel || 'default-channel';
+      console.log('openSignal channel ' + channel);
+      var sender = Math.round(Math.random() * 60535) + 5000;
+
+      io.connect(URL + 'rtc').emit('newChannel', {
+        channel: channel,
+        sender : sender
+      });
+
+      var socket = io.connect(URL + channel);
+      socket.channel = channel;
+
+      socket.on('connect', function () {
+        if (config.callback) config.callback(socket);
+      });
+
+      socket.send = function (message) {
+        socket.emit('message', {
+          sender: sender,
+          data  : message
+        });
+      };
+
+      socket.on('message', config.onmessage);
+    };
+
+    function webdropMessage(messageType, messageData) {
+      return { webdropType: messageType, data: messageData };
+    }
+
+    function pushToMessages(userId, message) {
+      var nick = $scope.connectedUsers[userId].nickName; 
+      $scope.messages.push({ from: nick, text: message });
+    }
+
+    function requestFileFailed(userId) {
+      $scope.status = "User " + userId + " does not offer the file you requested.";
+    }
+
+    function fileMetaDataReceived(userId, metaData) {
+      $scope.fileRequest.metaData = metaData;
+    }
+
+    var messageRouter = {
+      fileRequestFailed: requestFileFailed,
+      fileRequestMetaData: fileMetaDataReceived
+    };
+
+    channel.onmessage = function(message, userId) {
+      messageRouter[message.webdropType](userId, message.data);
+      $scope.$apply();
+    };
+
+    channel.onopen = function(userId, rawChannel) { 
+      if ($scope.fileRequest.userId == userId) {
+        // Connected to user offering file
+        console.log('Found user, sending file request');
+        rawChannel.send(JSON.stringify(webdropMessage('fileRequest', $scope.fileRequest.fileId)));
+        console.log('Sent file request');
+        $scope.status = "User found, requesting file...";
+        $scope.$apply();
+      } else {
+        console.log('Found wrong user ' + userId);
+      }
+    };
+
+    channel.onleave = function(userId) {
+//      removeUser(userId);
+//      $scope.$apply();
+    };
+
+    channel.onclose = function(event) {
+      // TODO: try "reconnect"
+      console.log('ERROR: Data ports closed');
+      console.log(event);
+    };
+
+    channel.onerror = function(event) {
+      console.log('ERROR: Unknown error occured');
+      console.log(event);
+    };
+
+    channel.onFileReceived = function (fileName) {
+      $scope.status = "File received!";
+      $scope.fileRequest.progress = { type: 'success', value: 100 };
+      $scope.$apply();
+    };
+
+    channel.onFileProgress = function (packets) {
+      // packets.remaining
+      // packets.sent      (for sender)
+      // packets.received  (for receiver)
+      // packets.length
+
+      var now = new Date();
+
+      if (typeof $scope.fileRequest.startTime == "undefined")
+        $scope.fileRequest.startTime = now;
+
+      var ellapsed = now - $scope.fileRequest.startTime;
+      var transferSpeed = '--';
+
+      if ($scope.fileRequest.metaData.size > 0) {
+        var bytesPerMillisecond = (packets.received * 1000) / ellapsed; // 1000 is bytes per package
+        var kiloBytesPerSecond = (bytesPerMillisecond / 1024) * 1000;
+        var transferSpeed = kiloBytesPerSecond.toFixed(2);
+      }
+
+      $scope.status = "Downloading file... ( " + transferSpeed + " kB/s )";
+      var progress = parseInt((packets.received / packets.length) * 100, 10);
+      $scope.fileRequest.progress.value = progress;
+      $scope.$apply();
+    };
+
+  }]);

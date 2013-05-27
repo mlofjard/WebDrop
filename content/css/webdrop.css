@@ -1,0 +1,31 @@
+body {
+  margin: 20px;
+}
+
+.input-append button.btn-append1 {
+  width: 81px; /* Awesome hack */
+}
+
+button.btn-logon {
+  width: 111px; /* Awesome hack */
+}
+
+form.form-no-bottom-margin {
+  margin-bottom: 0;
+}
+
+.navbar {
+  margin-bottom: 40px;
+}
+
+.navbar a.brand {
+  font-family: 'Squada One';
+  font-size: 82px;
+  margin-left: -30px
+}
+
+.hidden {
+  display: none;
+}
+
+object { position: absolute; left: -9000px; top: -9000px; }

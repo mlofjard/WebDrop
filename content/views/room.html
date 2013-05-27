@@ -1,0 +1,37 @@
+<div class="row">
+  <div class="span3 offset1">
+    <div class="well well-large">
+      <ul>
+        <li data-ng-repeat="(userId, user) in connectedUsers">{{userId}} - {{user.nickName}}</li>
+      </ul>
+    </div>
+    <div class="well well-large">
+      <ul>
+        <li data-ng-repeat="(fileName, file) in offeredFiles">{{fileName}} - {{file.size}}</li>
+      </ul>
+    </div>
+  </div>
+  <div class="span7">
+    <div class="well well-large">
+      Room: {{roomCode}}, User: {{currentUserId}}
+      <div>
+        Messages: 
+        <ul>
+          <li data-ng-repeat="msg in messages">{{msg.from}}: {{msg.text}}</li>
+        </ul>
+      </div>
+
+    </div>
+    <div class="input-append">
+      <form data-ng-submit="sendMessage()">
+      <input class="span6" type="text" placeholder="Write a message" data-ng-model="messageToSend" />
+      <button class="btn btn-append1" type="submit">Send</button>
+      </form>
+    </div>
+    <div class="input-append">
+      <input type="file" id="fileToUpload" class="hidden" data-file-offer="offeredFiles" />
+      <button class="btn" onclick="$('#fileToUpload').click();"><i class="icon-upload-alt"></i> Upload file</button>
+    </div>
+
+  </div>
+</div>

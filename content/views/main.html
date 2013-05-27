@@ -1,0 +1,19 @@
+<div class="row">
+  <div class="span6 offset3">
+    <div class="well well-large">
+      <form data-ng-submit="joinRoom()" class="form-no-bottom-margin">
+        <div class="input-append">
+          <input class="span4" type="text" data-ng-model="roomToJoin" placeholder="Write a room code and"/>
+          <button class="btn btn-primary btn-logon" type="submit">Join</button>
+        </div>
+      </form>
+      <div>
+        <span class="pull-right">
+          <span class="help-inline">... or you can create a </span>
+          <button class="btn btn-logon" data-ng-click="newRoom()">New room</button>
+        </span>
+        <div class="clearfix"></div>
+      </div>
+    </div>
+  </div>
+</div>
